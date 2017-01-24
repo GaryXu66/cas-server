@@ -49,22 +49,14 @@
 			index="1" value="${host.name}" />
 	</bean>
 
+<!-- DefaultUniqueTicketIdGenerator要做的就是生成以LT作为前缀的loginTicket并放到flowScope中（例：LT-2-pfDmbEHfX2OkS0swLtDd7iDwmzlhsn）。注：LT只作为登录时使用的票据 -->    	
     <bean id="loginTicketUniqueIdGenerator" class="org.jasig.cas.util.DefaultUniqueTicketIdGenerator">
-        <constructor-arg
-            index="0"
-            type="int"
-            value="30" />
+        <constructor-arg index="0" type="int" value="30" />
     </bean>
-    	
-<bean
-      id="proxy20TicketUniqueIdGenerator"
-      class="org.jasig.cas.util.DefaultUniqueTicketIdGenerator">
-		<constructor-arg
-			index="0"
-			type="int"
-			value="20" />
-		<constructor-arg
-			index="1" value="${host.name}" />
+
+<bean id="proxy20TicketUniqueIdGenerator" class="org.jasig.cas.util.DefaultUniqueTicketIdGenerator">
+	<constructor-arg index="0" type="int" value="20" />
+	<constructor-arg index="1" value="${host.name}" />
 </bean>
 	 
 	<bean id="samlServiceTicketUniqueIdGenerator" class="org.jasig.cas.util.SamlCompliantUniqueTicketIdGenerator">

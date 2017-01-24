@@ -60,6 +60,7 @@
                         <label for="warn"><spring:message code="screen.welcome.label.warn" /></label>
                     </div>
                     <div class="row btn-row">
+                    	<%--参数值就是在GenerateLoginTicketAction的generate方法中生成的loginTicket --%>
 						<input type="hidden" name="lt" value="${loginTicket}" />
 						<input type="hidden" name="execution" value="${flowExecutionKey}" />
 						<input type="hidden" name="_eventId" value="submit" />

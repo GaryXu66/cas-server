@@ -24,15 +24,23 @@
       xsi:schemaLocation="http://www.springframework.org/schema/webflow
                           http://www.springframework.org/schema/webflow/spring-webflow-2.0.xsd">
 
+	<!--1. 设置一个变量，用来存储用户名和密码信息 -->
     <var name="credentials" class="org.jasig.cas.authentication.principal.UsernamePasswordCredentials" />
+    
+    <!--2. 整个登录流程从此处开始，流程初始化initialFlowSetupAction的配置信息在/WEB-INF/cas-servlet.xml中(注释见cas-server.xml)
+    	 初始化完成后，登录流程流转到第一个state（ticketGrantingTicketExistsCheck）-->
     <on-start>
         <evaluate expression="initialFlowSetupAction" />
     </on-start>
 
+	<!--3. 当我们第一次访问集成了CAS单点登录的应用系统webapp1时，此时应用系统会跳转到CAS单点登录的服务器端（http://127.0.0.1:8081/cas-server/login?service=http://127.0.0.1:8090/webapp1/main.do）。
+	此时，request的cookies中不存在CASTGC（TGT），因此FlowScope作用域中的ticketGrantingTicketId为null，登录流程流转到第二个state（gatewayRequestCheck） 
+	(这里根据test中的参数进入不同的state)-->
 	<decision-state id="ticketGrantingTicketExistsCheck">
 		<if test="flowScope.ticketGrantingTicketId != null" then="hasServiceCheck" else="gatewayRequestCheck" />
 	</decision-state>
     
+    <!--4. 因为初始化时，尽管把service保存在了FlowScope作用域中，但request中的参数gateway不存在，登录流程流转到第三个state（serviceAuthorizationCheck） -->
 	<decision-state id="gatewayRequestCheck">
 		<if test="requestParameters.gateway != '' and requestParameters.gateway != null and flowScope.service != null" then="gatewayServicesManagementCheck" else="serviceAuthorizationCheck" />
 	</decision-state>
@@ -45,16 +53,17 @@
 		<if test="requestParameters.renew != '' and requestParameters.renew != null" then="serviceAuthorizationCheck" else="generateServiceTicket" />
 	</decision-state>
 
+	<!--5. 会执行serviceAuthorizationCheck（配置信息在/WEB-INF/cas-servlet.xml中）的doExecute方法，要做的就是判断FlowScope作用域中是否存在service，如果service存在，查找service的注册信息。
+		 然后流程流转到第四个state（generateLoginTicket） -->
     <!-- Do a service authorization check early without the need to login first -->
     <action-state id="serviceAuthorizationCheck">
-        <evaluate expression="serviceAuthorizationCheck"/>
+        <evaluate expression="serviceAuthorizationCheck"/> 
         <transition to="generateLoginTicket"/>
     </action-state>
 	
-	<!-- 
-		The "warn" action makes the determination of whether to redirect directly to the requested
-		service or display the "confirmation" page to go back to the server.
-	-->
+	<!--12. 由于此时FlowScope中不存在warnCookieValue，cas登录流程流转到第六个state（redirect）  -->
+	<!-- The "warn" action makes the determination of whether to redirect directly to the requested
+		service or display the "confirmation" page to go back to the server. -->
 	<decision-state id="warn">
 		<if test="flowScope.warnCookieValue" then="showWarningView" else="redirect" />
 	</decision-state>
@@ -111,11 +120,16 @@
 	<end-state id="casBadWorkstationView" view="casBadWorkstationView" />
 	<!-- LPPE transitions end here... -->
 	
+	<!--6. 会执行generateLoginTicketAction.generate(flowRequestContext)配置见/WEB-INF/cas-servlet.xml  
+	generate()要做的就是生成loginTicket，并且把loginTicket放到FlowScope作用域中。登录流程流转到第五个state（viewLoginForm）-->
 	<action-state id="generateLoginTicket">
         <evaluate expression="generateLoginTicketAction.generate(flowRequestContext)" />
 		<transition on="generated" to="viewLoginForm" />
 	</action-state>
     
+    <!--7. 至此，经过五个state的流转，我们完成了第一次访问集成了单点登录的应用系统，此时流转到CAS单点登录服务器端的登录页面/WEB-INF/jsp/ui/default/casLoginView.jsp。
+    	 由于casLoginView.jsp是CAS提供的默认登录页面，需要把此页面修改成我们系统需要的登录页面，格式需要参考casLoginView.jsp  
+    	 *注意:默认的登录页面中有lt、execution和_eventId三个隐藏参数，lt参数值就是在GenerateLoginTicketAction的generate方法中生成的loginTicket。-->
 	<view-state id="viewLoginForm" view="casLoginView" model="credentials">
         <binder>
             <binding property="username" />
@@ -124,11 +138,20 @@
         <on-entry>
             <set name="viewScope.commandName" value="'credentials'" />
         </on-entry>
+        <!-- CAS单点登录服务器端的登录验证
+			 当输入用户名和密码，点击登录按钮时，会执行AuthenticationViaFormAction的doBind方法(配置见/WEB-INF/cas-servlet.xml) 
+			 然后cas登录流程转到第一个state（realSubmit）-->
 		<transition on="submit" bind="true" validate="true" to="realSubmit">
             <evaluate expression="authenticationViaFormAction.doBind(flowRequestContext, flowScope.credentials)" />
         </transition>
 	</view-state>
 
+	<!--8. 执行AuthenticationViaFormAction的submit方法 (配置见/WEB-INF/cas-servlet.xml)
+		 AuthenticationViaFormAction的submit要做的就是判断FlowScope和request中的loginTicket是否相同。
+		  如果不同跳转到错误页面，
+		  如果相同，则根据用户凭证生成TGT（登录成功票据），并放到requestScope作用域中，同时把TGT缓存到服务器的cache<ticketId,TGT>中。
+		  (先說成功的流程)cas登录流程流转到第二个state（sendTicketGrantingTicket）。
+注：既然是登录，那么可以在此方法中加入自己的业务逻辑，比如，可以加入验证码的判断，以及错误信息的提示，用户名或者密码错误，验证码错误等逻辑判断-->
   	<action-state id="realSubmit">
         <evaluate expression="authenticationViaFormAction.submit(flowRequestContext, flowScope.credentials, messageContext)" />
         <!--
@@ -143,7 +166,7 @@
 	      To enable LPPE on the 'success' replace the below transition with:
 	      <transition on="success" to="passwordPolicyCheck" />
 	    -->
-		<transition on="success" to="sendTicketGrantingTicket" />
+		<transition on="success" to="sendTicketGrantingTicket" /><!-- 先說成功的流程 -->
 		<transition on="error" to="generateLoginTicket" />
 		<transition on="accountDisabled" to="casAccountDisabledView" />
 	    <transition on="mustChangePassword" to="casMustChangePassView" />
@@ -153,15 +176,22 @@
 	    <transition on="passwordExpired" to="casExpiredPassView" />
 	</action-state>
 	
+	<!--9. SendTicketGrantingTicketAction的doExecute要做的是获取TGT，并根据TGT生成cookie添加到response
+		cas登录流程流转到第三个state（serviceCheck） -->
 	<action-state id="sendTicketGrantingTicket">
         <evaluate expression="sendTicketGrantingTicketAction" />
 		<transition to="serviceCheck" />
 	</action-state>
 
+	<!--10. 此时FlowScope中存在service（http://127.0.0.1:8081/cas-server/login?service=http://127.0.0.1:8090/webapp1/main.do），
+		cas登录流程流转到第四个state（generateServiceTicket）  -->
 	<decision-state id="serviceCheck">
 		<if test="flowScope.service != null" then="generateServiceTicket" else="viewGenericLoginSuccess" />
 	</decision-state>
 	
+	<!-- 11. generateServiceTicketAction(配置见/WEB-INF/cas-servlet.xml) 
+		GenerateServiceTicketAction的doExecute要做的是获取service和TGT，并根据service和TGT生成以ST为前缀的serviceTicket（例：ST-2-97kwhcdrBW97ynpBbZH5-cas01.example.org），
+		并把serviceTicket放到requestScope中。cas登录流程流转到第五个state（warn）往上-->
 	<action-state id="generateServiceTicket">
         <evaluate expression="generateServiceTicketAction" />
 		<transition on="success" to ="warn" />
@@ -174,11 +204,15 @@
         <transition on="success" to="redirect" />
     </action-state>
 
+	<!--13. 从requestScope中获取serviceTicket，构造response对象，并把response放到requestScope中。
+	cas登录流程流转到第七个state（postRedirectDecision）  -->
     <action-state id="redirect">
         <evaluate expression="flowScope.service.getResponse(requestScope.serviceTicketId)" result-type="org.jasig.cas.authentication.principal.Response" result="requestScope.response" />
         <transition to="postRedirectDecision" />
     </action-state>
 
+	<!--14.  由于request请求（http://127.0.0.1:8081/cas-server/login?service=http://127.0.0.1:8090/webapp1/main.do）是get类型，
+	cas登录流程流转到第八个state（redirectView） -->
     <decision-state id="postRedirectDecision">
         <if test="requestScope.response.responseType.name() == 'POST'" then="postView" else="redirectView" />
     </decision-state>
@@ -202,10 +236,12 @@
         </on-entry>
     </end-state>
 
-	<!-- 
-		The "redirect" end state allows CAS to properly end the workflow while still redirecting
-		the user back to the service required.
-	-->
+	<!--15. 此时流程如下：
+		1)跳转回到应用系统（http://127.0.0.1:8090/webapp1/main.do?ticket=ST-1-4hH2s5tzsMGCcToDvGCb-cas01.example.org）。
+		2)进入CAS 客户端 的AuthenticationFilter过滤器，由于session中获取名为“_const_cas_assertion_”的assertion对象不存在，但是request有ticket参数，所以进入到下一个过滤器。
+		3)TicketValidationFilter过滤器的validate方法通过httpClient访问CAS服务器端（http://127.0.0.1:8081/cas-server/serviceValidate?ticket=ST-1-4hH2s5tzsMGCcToDvGCb-cas01.example.org&service=http://127.0.0.1:8090/webapp1/main.do）验证ticket是否正确，并返回assertion对象。  -->
+	<!-- The "redirect" end state allows CAS to properly end the workflow while still redirecting
+		the user back to the service required.-->
 	<end-state id="redirectView" view="externalRedirect:${requestScope.response.url}" />
 	
 	<end-state id="viewServiceErrorView" view="viewServiceErrorView" />
