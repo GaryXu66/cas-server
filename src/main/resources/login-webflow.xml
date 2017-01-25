@@ -25,7 +25,7 @@
                           http://www.springframework.org/schema/webflow/spring-webflow-2.0.xsd">
 
 	<!--1. 设置一个变量，用来存储用户名和密码信息 -->
-    <var name="credentials" class="org.jasig.cas.authentication.principal.UsernamePasswordCredentials" />
+    <var name="credential" class="org.jasig.cas.authentication.UsernamePasswordCredential" />
     
     <!--2. 整个登录流程从此处开始，流程初始化initialFlowSetupAction的配置信息在/WEB-INF/cas-servlet.xml中(注释见cas-server.xml)
     	 初始化完成后，登录流程流转到第一个state（ticketGrantingTicketExistsCheck）-->
@@ -36,9 +36,17 @@
 	<!--3. 当我们第一次访问集成了CAS单点登录的应用系统webapp1时，此时应用系统会跳转到CAS单点登录的服务器端（http://127.0.0.1:8081/cas-server/login?service=http://127.0.0.1:8090/webapp1/main.do）。
 	此时，request的cookies中不存在CASTGC（TGT），因此FlowScope作用域中的ticketGrantingTicketId为null，登录流程流转到第二个state（gatewayRequestCheck） 
 	(这里根据test中的参数进入不同的state)-->
-	<decision-state id="ticketGrantingTicketExistsCheck">
-		<if test="flowScope.ticketGrantingTicketId != null" then="hasServiceCheck" else="gatewayRequestCheck" />
-	</decision-state>
+	<action-state id="ticketGrantingTicketCheck">
+        <evaluate expression="ticketGrantingTicketCheckAction.checkValidity(flowRequestContext)"/>
+        <transition on="notExists" to="gatewayRequestCheck"/>
+        <transition on="invalid" to="terminateSession"/>
+        <transition on="valid" to="hasServiceCheck"/>
+	</action-state>
+
+   	<action-state id="terminateSession">
+       	<evaluate expression="terminateSessionAction.terminate(flowRequestContext)"/>
+   		<transition to="generateLoginTicket"/>
+   	</action-state>
     
     <!--4. 因为初始化时，尽管把service保存在了FlowScope作用域中，但request中的参数gateway不存在，登录流程流转到第三个state（serviceAuthorizationCheck） -->
 	<decision-state id="gatewayRequestCheck">
@@ -76,50 +84,6 @@
 		<transition on="error" to="generateLoginTicket" />
 	</action-state>
 	 -->
-    
-    <!--
-   		LPPE transitions begin here: You will also need to
-   		move over the 'lppe-configuration.xml' file from the
-   		'unused-spring-configuration' folder to the 'spring-configuration' folder
-   		so CAS can pick up the definition for the bean 'passwordPolicyAction'.
-   	-->
-	<action-state id="passwordPolicyCheck">
-		<evaluate expression="passwordPolicyAction" />
-		<transition on="showWarning" to="passwordServiceCheck" />
-		<transition on="success" to="sendTicketGrantingTicket" />
-		<transition on="error" to="viewLoginForm" />
-	</action-state>
-
-	<action-state id="passwordServiceCheck">
-		<evaluate expression="sendTicketGrantingTicketAction" />
-		<transition to="passwordPostCheck" />
-	</action-state>
-
-	<decision-state id="passwordPostCheck">
-		<if test="flowScope.service != null" then="warnPassRedirect" else="pwdWarningPostView" />
-	</decision-state>
-
-	<action-state id="warnPassRedirect">
-		<evaluate expression="generateServiceTicketAction" />
-		<transition on="success" to="pwdWarningPostView" />
-		<transition on="error" to="generateLoginTicket" />
-		<transition on="gateway" to="gatewayServicesManagementCheck" />
-	</action-state>
-
-	<end-state id="pwdWarningAbstractView">
-		<on-entry>
-			<set name="flowScope.passwordPolicyUrl" value="passwordPolicyAction.getPasswordPolicyUrl()" />
-		</on-entry>
-	</end-state>
-	<end-state id="pwdWarningPostView" view="casWarnPassView" parent="#pwdWarningAbstractView" />
-	<end-state id="casExpiredPassView" view="casExpiredPassView" parent="#pwdWarningAbstractView" />
-	<end-state id="casMustChangePassView" view="casMustChangePassView" parent="#pwdWarningAbstractView" />
-	<end-state id="casAccountDisabledView" view="casAccountDisabledView" />
-	<end-state id="casAccountLockedView" view="casAccountLockedView" />
-	<end-state id="casBadHoursView" view="casBadHoursView" />
-	<end-state id="casBadWorkstationView" view="casBadWorkstationView" />
-	<!-- LPPE transitions end here... -->
-	
 	<!--6. 会执行generateLoginTicketAction.generate(flowRequestContext)配置见/WEB-INF/cas-servlet.xml  
 	generate()要做的就是生成loginTicket，并且把loginTicket放到FlowScope作用域中。登录流程流转到第五个state（viewLoginForm）-->
 	<action-state id="generateLoginTicket">
@@ -130,19 +94,19 @@
     <!--7. 至此，经过五个state的流转，我们完成了第一次访问集成了单点登录的应用系统，此时流转到CAS单点登录服务器端的登录页面/WEB-INF/jsp/ui/default/casLoginView.jsp。
     	 由于casLoginView.jsp是CAS提供的默认登录页面，需要把此页面修改成我们系统需要的登录页面，格式需要参考casLoginView.jsp  
     	 *注意:默认的登录页面中有lt、execution和_eventId三个隐藏参数，lt参数值就是在GenerateLoginTicketAction的generate方法中生成的loginTicket。-->
-	<view-state id="viewLoginForm" view="casLoginView" model="credentials">
+	<view-state id="viewLoginForm" view="casLoginView" model="credential">
         <binder>
             <binding property="username" />
             <binding property="password" />
         </binder>
         <on-entry>
-            <set name="viewScope.commandName" value="'credentials'" />
+            <set name="viewScope.commandName" value="'credential'" />
         </on-entry>
         <!-- CAS单点登录服务器端的登录验证
 			 当输入用户名和密码，点击登录按钮时，会执行AuthenticationViaFormAction的doBind方法(配置见/WEB-INF/cas-servlet.xml) 
 			 然后cas登录流程转到第一个state（realSubmit）-->
 		<transition on="submit" bind="true" validate="true" to="realSubmit">
-            <evaluate expression="authenticationViaFormAction.doBind(flowRequestContext, flowScope.credentials)" />
+            <evaluate expression="authenticationViaFormAction.doBind(flowRequestContext, flowScope.credential)" />
         </transition>
 	</view-state>
 
@@ -153,28 +117,34 @@
 		  (先說成功的流程)cas登录流程流转到第二个state（sendTicketGrantingTicket）。
 注：既然是登录，那么可以在此方法中加入自己的业务逻辑，比如，可以加入验证码的判断，以及错误信息的提示，用户名或者密码错误，验证码错误等逻辑判断-->
   	<action-state id="realSubmit">
-        <evaluate expression="authenticationViaFormAction.submit(flowRequestContext, flowScope.credentials, messageContext)" />
-        <!--
-	      To enable LPPE on the 'warn' replace the below transition with:
-	      <transition on="warn" to="passwordPolicyCheck" />
-
-	      CAS will attempt to transition to the 'warn' when there's a 'renew' parameter
-	      and there exists a ticketGrantingId and a service for the incoming request.
-	    -->
+        <evaluate expression="authenticationViaFormAction.submit(flowRequestContext, flowScope.credential, messageContext)" />
 		<transition on="warn" to="warn" />
-		<!--
-	      To enable LPPE on the 'success' replace the below transition with:
-	      <transition on="success" to="passwordPolicyCheck" />
-	    -->
 		<transition on="success" to="sendTicketGrantingTicket" /><!-- 先說成功的流程 -->
-		<transition on="error" to="generateLoginTicket" />
-		<transition on="accountDisabled" to="casAccountDisabledView" />
-	    <transition on="mustChangePassword" to="casMustChangePassView" />
-	    <transition on="accountLocked" to="casAccountLockedView" />
-	    <transition on="badHours" to="casBadHoursView" />
-	    <transition on="badWorkstation" to="casBadWorkstationView" />
-	    <transition on="passwordExpired" to="casExpiredPassView" />
-	</action-state>
+	 	<transition on="successWithWarnings" to="showMessages" />
+	    <transition on="authenticationFailure" to="handleAuthenticationFailure" />
+	    <transition on="error" to="generateLoginTicket" />
+	  </action-state>
+
+	  <view-state id="showMessages" view="casLoginMessageView">
+	    <on-entry>
+	      <evaluate expression="sendTicketGrantingTicketAction" />
+	      <set name="requestScope.messages" value="messageContext.allMessages" />
+	    </on-entry>
+	    <transition on="proceed" to="serviceCheck" />
+	  </view-state>
+
+	  <action-state id="handleAuthenticationFailure">
+	    <evaluate expression="authenticationExceptionHandler.handle(currentEvent.attributes.error, messageContext)" />
+	    <transition on="AccountDisabledException" to="casAccountDisabledView"/>
+	    <transition on="AccountLockedException" to="casAccountLockedView"/>
+	    <transition on="CredentialExpiredException" to="casExpiredPassView"/>
+	    <transition on="InvalidLoginLocationException" to="casBadWorkstationView"/>
+	    <transition on="InvalidLoginTimeException" to="casBadHoursView"/>
+	    <transition on="FailedLoginException" to="generateLoginTicket"/>
+	    <transition on="AccountNotFoundException" to="generateLoginTicket"/>
+	    <transition on="UNKNOWN" to="generateLoginTicket"/>
+	  
+	  </action-state>
 	
 	<!--9. SendTicketGrantingTicketAction的doExecute要做的是获取TGT，并根据TGT生成cookie添加到response
 		cas登录流程流转到第三个state（serviceCheck） -->
@@ -195,7 +165,8 @@
 	<action-state id="generateServiceTicket">
         <evaluate expression="generateServiceTicketAction" />
 		<transition on="success" to ="warn" />
-		<transition on="error" to="generateLoginTicket" />
+    <transition on="authenticationFailure" to="handleAuthenticationFailure" />
+    <transition on="error" to="generateLoginTicket" />
 		<transition on="gateway" to="gatewayServicesManagementCheck" />
 	</action-state>
 
@@ -229,6 +200,20 @@
 	-->
 	<end-state id="showWarningView" view="casLoginConfirmView" />
 
+
+  <!-- Password policy failure states -->
+  <end-state id="abstactPasswordChangeView">
+    <on-entry>
+      <set name="flowScope.passwordPolicyUrl" value="passwordPolicy.passwordPolicyUrl" />
+    </on-entry>
+  </end-state>
+  <end-state id="casExpiredPassView" view="casExpiredPassView" parent="#abstactPasswordChangeView" />
+  <end-state id="casMustChangePassView" view="casMustChangePassView" parent="#abstactPasswordChangeView" />
+  <end-state id="casAccountDisabledView" view="casAccountDisabledView" />
+  <end-state id="casAccountLockedView" view="casAccountLockedView" />
+  <end-state id="casBadHoursView" view="casBadHoursView" />
+  <end-state id="casBadWorkstationView" view="casBadWorkstationView" />
+
     <end-state id="postView" view="postResponseView">
         <on-entry>
             <set name="requestScope.parameters" value="requestScope.response.attributes" />
@@ -242,7 +227,7 @@
 		3)TicketValidationFilter过滤器的validate方法通过httpClient访问CAS服务器端（http://127.0.0.1:8081/cas-server/serviceValidate?ticket=ST-1-4hH2s5tzsMGCcToDvGCb-cas01.example.org&service=http://127.0.0.1:8090/webapp1/main.do）验证ticket是否正确，并返回assertion对象。  -->
 	<!-- The "redirect" end state allows CAS to properly end the workflow while still redirecting
 		the user back to the service required.-->
-	<end-state id="redirectView" view="externalRedirect:${requestScope.response.url}" />
+	<end-state id="redirectView" view="externalRedirect:#{requestScope.response.url}" />
 	
 	<end-state id="viewServiceErrorView" view="viewServiceErrorView" />
     

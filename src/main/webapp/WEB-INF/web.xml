@@ -19,10 +19,11 @@
     under the License.
 
 -->
-<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns="http://java.sun.com/xml/ns/javaee"
-	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
-	version="2.5">
+	<web-app version="2.5"  
+    xmlns="http://java.sun.com/xml/ns/javaee"  
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  
+    xsi:schemaLocation="http://java.sun.com/xml/ns/javaee  
+    http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">  
   <display-name>Central Authentication System (CAS) 3.5.2</display-name>
 
   <context-param>
@@ -119,6 +120,10 @@
     <init-param>
       <param-name>publishContext</param-name>
       <param-value>false</param-value>
+      <param-name>contextConfigLocation</param-name>
+      <param-value>
+      	/WEB-INF/classes/cas-servlet.xml
+      </param-value>
     </init-param>
     <load-on-startup>1</load-on-startup>
   </servlet>
