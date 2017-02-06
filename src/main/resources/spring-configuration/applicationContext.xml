@@ -61,12 +61,12 @@
     -->
     <!-- 国际化配置文件 -->
     <bean id="messageSource" class="org.jasig.cas.web.view.CasReloadableMessageBundle"
-          p:basenames="theme/messages" p:fallbackToSystemLocale="false" p:defaultEncoding="UTF-8"
+          p:basenames-ref="basenames" p:fallbackToSystemLocale="false" p:defaultEncoding="UTF-8"
           p:cacheSeconds="180" p:useCodeAsDefaultMessage="true" />
 
-   <!--  <util:list id="basenames">
-        <value>properties/messages</value>
-    </util:list> -->
+	<util:list id="basenames">
+        <value>theme/messages</value>
+    </util:list>
     
     <bean id="servicesManager" class="org.jasig.cas.services.DefaultServicesManagerImpl"
         c:serviceRegistryDao-ref="serviceRegistryDao" />

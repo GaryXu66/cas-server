@@ -54,7 +54,6 @@
     <property name="basenames">
       <util:list>
         <value>${cas.viewResolver.basename}</value>
-        <value>theme/protocol_views</value>
       </util:list>
     </property>
   </bean>
@@ -137,7 +136,7 @@
  在webflow中，会定义一些视图，以view=”XXX”的形式存在。那么XXX又是如何找到对应的页面呢？
  看flow-builder-services，对应的节点中有个view-factory-creator属性，该属性就定义了视图解析工厂-->
   <webflow:flow-registry id="loginFlowRegistry" flow-builder-services="builder">
-    <webflow:flow-location path="/WEB-INF/classes/login-webflow.xml" id="login" />
+    <webflow:flow-location path="classpath:login-webflow.xml" id="login" />
   </webflow:flow-registry>
 
   <!-- logout webflow configuration -->
@@ -165,7 +164,7 @@
   </webflow:flow-executor>
 
   <webflow:flow-registry id="logoutFlowRegistry" flow-builder-services="builder">
-    <webflow:flow-location path="/WEB-INF/classes/logout-webflow.xml" id="logout" />
+    <webflow:flow-location path="classpath:logout-webflow.xml" id="logout" />
   </webflow:flow-registry>
 
 <!-- view-factory-creator属性，该属性就定义了视图解析工厂 -->
