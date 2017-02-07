@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gary.cas.dao.UserDao">
+	<sql id="user_columns">id, name, email, pass, phone</sql>
+
+	<select id="findByNameAndPass" parameterType="java.util.Map" resultType="User">
+		SELECT <include refid="user_columns"/> FROM t_user WHERE name= #{name} AND pass=#{pass}
+	</select>
+</mapper>
