@@ -1,8 +1,9 @@
 package com.gary.cas.util;
 
 import java.nio.charset.Charset;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+
+import org.apache.commons.codec.digest.DigestUtils;
 
 public class MD5Util {
 	
@@ -14,21 +15,20 @@ public class MD5Util {
 	 * @return
 	 * @throws NoSuchAlgorithmException
 	 */
-	public static byte[] encrypt(String data, String key, Charset encode) throws NoSuchAlgorithmException{
-		return getMD5Digest().digest((data+key).getBytes(encode));
+	public static String encrypt(String data, String key, Charset encode) {
+		return DigestUtils.md5Hex(getContentBytes(data+key,encode));
 	}
 	
-	private static MessageDigest getMD5Digest() throws NoSuchAlgorithmException{
-		return MessageDigest.getInstance("MD5");
-	}
-
+	private static byte[] getContentBytes(String content, Charset charset) {
+        if (null == charset) {
+            return content.getBytes();
+        }
+        return content.getBytes(charset);
+    }
+	
 	public static void main(String[] args) {
-		try {
-			byte[] result = MD5Util.encrypt("abcdefghijklmnopqrstuvwxyz", "123", Charset.forName("UTF-8"));
-			System.out.println(String.valueOf(result));
-		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		String result = MD5Util.encrypt("abcdefghijklmnopqrstuvwxyz", "123", Charset.forName("UTF-8"));
+		String result2 = MD5Util.encrypt("abcdefghijklmnopqrstuvwxyz", "123", Charset.forName("UTF-8"));
+		System.out.println(result.equals(result2));
 	}
 }

@@ -13,11 +13,6 @@
        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd
        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd">
     
-    <context:annotation-config/>
-    <!-- 扫描指定的包-->
-    <context:component-scan base-package="com.gary.cas.dao"/> 
-    <context:component-scan base-package="com.gary.cas.service"/>
-    
     <!-- 加载db.properties文件  也可以在class中用@Value注入使用
     (在spring-configuration/propertyFileConfigurer.xml中已经将配置文件加载了，注：配置文件的扫描只能一次)-->
 	<!-- <context:property-placeholder location="classpath:*.properties" file-encoding="UTF-8"/> -->
