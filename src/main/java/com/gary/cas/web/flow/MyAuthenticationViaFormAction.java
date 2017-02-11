@@ -92,7 +92,7 @@ public class MyAuthenticationViaFormAction {
             return newEvent(ERROR);
         }
 
-        //requestScope和FlowScope中获取TGT
+        //requestScope/FlowScope中获取TGT
         final String ticketGrantingTicketId = WebUtils.getTicketGrantingTicketId(context);
         //FlowScope中获取service  
         final Service service = WebUtils.getService(context);
@@ -117,8 +117,7 @@ public class MyAuthenticationViaFormAction {
             }
         }
 
-        if(credential instanceof UsernamePasswordCredential)
-        {
+        if(credential instanceof UsernamePasswordCredential) {
 	        UsernamePasswordCredential userNamePass = (UsernamePasswordCredential) credential;
 	        boolean loginResult = userBizService.loginValid(userNamePass.getUsername(), userNamePass.getPassword());
 	        if(!loginResult){

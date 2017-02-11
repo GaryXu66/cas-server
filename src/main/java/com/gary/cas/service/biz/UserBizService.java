@@ -21,8 +21,8 @@ import com.gary.cas.util.MD5Util;
 @Service
 public class UserBizService extends BaseLog{
 	
-	@Value(value="password.encryptkey")
-	private String encryptKey;
+	@Value("${password.encryptkey}")
+	public String encryptKey;
 	
 	@Autowired
 	private UserService userService;
