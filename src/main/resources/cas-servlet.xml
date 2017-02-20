@@ -270,10 +270,15 @@
   <bean id="gatewayServicesManagementCheck" class="org.jasig.cas.web.flow.GatewayServicesManagementCheck"
     c:servicesManager-ref="servicesManager" />
 
-  <bean id="serviceAuthorizationCheck" class="org.jasig.cas.web.flow.ServiceAuthorizationCheck"
+  <!-- <bean id="serviceAuthorizationCheck" class="org.jasig.cas.web.flow.ServiceAuthorizationCheck"
+    c:servicesManager-ref="servicesManager" /> -->
+    <bean id="serviceAuthorizationCheck" class="com.gary.cas.web.flow.MyServiceAuthorizationCheck"
     c:servicesManager-ref="servicesManager" />
+    
 <!-- loginTicketUniqueIdGenerator见配置/WEB-INF/spring-configuration/uniqueIdGenerators.xml -->
-  <bean id="generateLoginTicketAction" class="org.jasig.cas.web.flow.GenerateLoginTicketAction"
+  <!-- <bean id="generateLoginTicketAction" class="org.jasig.cas.web.flow.GenerateLoginTicketAction"
+        p:ticketIdGenerator-ref="loginTicketUniqueIdGenerator"/> -->
+        <bean id="generateLoginTicketAction" class="com.gary.cas.web.flow.MyGenerateLoginTicketAction"
         p:ticketIdGenerator-ref="loginTicketUniqueIdGenerator"/>
 
   <bean id="messageInterpolator" class="org.jasig.cas.util.SpringAwareMessageMessageInterpolator"/>
@@ -281,7 +286,9 @@
   <bean id="credentialsValidator" class="org.springframework.validation.beanvalidation.LocalValidatorFactoryBean"
         p:messageInterpolator-ref="messageInterpolator"/>
 
-  <bean id="ticketGrantingTicketCheckAction" class="org.jasig.cas.web.flow.TicketGrantingTicketCheckAction"
+  <!-- <bean id="ticketGrantingTicketCheckAction" class="org.jasig.cas.web.flow.TicketGrantingTicketCheckAction"
+        c:registry-ref="ticketRegistry" /> -->
+        <bean id="ticketGrantingTicketCheckAction" class="com.gary.cas.web.flow.MyTicketGrantingTicketCheckAction"
         c:registry-ref="ticketRegistry" />
 
   <bean id="terminateSessionAction" class="org.jasig.cas.web.flow.TerminateSessionAction"

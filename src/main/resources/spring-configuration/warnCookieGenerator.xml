@@ -28,8 +28,10 @@
 	is used.  You would modify this if you wanted to change the cookie path or the name.
 	</description>
 	
+	
+	<!-- p:cookieSecure="true" -->
 	<bean id="warnCookieGenerator" class="org.jasig.cas.web.support.CookieRetrievingCookieGenerator"
-		p:cookieSecure="true"
+		p:cookieSecure="false"
 		p:cookieMaxAge="-1"
 		p:cookieName="CASPRIVACY"
 		p:cookiePath="/cas" />
