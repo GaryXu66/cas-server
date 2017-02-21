@@ -255,8 +255,7 @@
   <bean id="authenticationViaFormAction" class="com.gary.cas.web.flow.MyAuthenticationViaFormAction"
         p:centralAuthenticationService-ref="centralAuthenticationService"
         p:warnCookieGenerator-ref="warnCookieGenerator"
-        p:ticketRegistry-ref="ticketRegistry"
-        p:userBizService-ref="userBizService"/>
+        p:ticketRegistry-ref="ticketRegistry"/>
 
   <bean id="authenticationExceptionHandler" class="org.jasig.cas.web.flow.AuthenticationExceptionHandler" />
 

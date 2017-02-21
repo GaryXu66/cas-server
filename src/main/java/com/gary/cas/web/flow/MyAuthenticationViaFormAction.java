@@ -70,8 +70,6 @@ public class MyAuthenticationViaFormAction {
 
     /** Logger instance. **/
     protected final Logger logger = LoggerFactory.getLogger(getClass());
-    @NotNull 
-    private UserBizService userBizService;
 
     public final void doBind(final RequestContext context, final Credential credential) throws Exception {
         final HttpServletRequest request = WebUtils.getHttpServletRequest(context);
@@ -117,13 +115,16 @@ public class MyAuthenticationViaFormAction {
             }
         }
 
-        if(credential instanceof UsernamePasswordCredential) {
+        
+        /*迁移到 com.gary.cas.sso.handler.MyAcceptUsersAuthenticationHandler.authenticateUsernamePasswordInternal()进行验证用户是否存在s
+         * 
+         * if(credential instanceof UsernamePasswordCredential) {
 	        UsernamePasswordCredential userNamePass = (UsernamePasswordCredential) credential;
 	        boolean loginResult = userBizService.loginValid(userNamePass.getUsername(), userNamePass.getPassword());
 	        if(!loginResult){
 	        	 return newEvent(AUTHENTICATION_FAILURE);
 	        }
-        }
+        }*/
         
         try {
         	//根据用户凭证构造TGT，把TGT放到requestScope中，同时把TGT缓存到服务器的cache<ticketId,TGT>中  
@@ -216,7 +217,7 @@ public class MyAuthenticationViaFormAction {
         this.hasWarningMessages = true;
     }
     
-	public void setUserBizService(UserBizService userBizService) {
+	/*public void setUserBizService(UserBizService userBizService) {
 		this.userBizService = userBizService;
-	}
+	}*/
 }

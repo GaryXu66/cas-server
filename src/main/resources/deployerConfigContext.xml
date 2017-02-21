@@ -105,13 +105,18 @@
        | * org.jasig.cas.adaptors.x509.authentication.handler.support.X509CredentialsAuthenticationHandler
        | * org.jasig.cas.support.spnego.authentication.handler.support.JCIFSSpnegoAuthenticationHandler
        -->
-    <bean id="primaryAuthenticationHandler"
+   <!--  <bean id="primaryAuthenticationHandler"
           class="org.jasig.cas.authentication.AcceptUsersAuthenticationHandler">
         <property name="users">
             <map>
                 <entry key="casuser" value="Mellon"/>
             </map>
         </property>
+    </bean> -->
+    <bean id="primaryAuthenticationHandler"
+          class="com.gary.cas.sso.handler.MyAcceptUsersAuthenticationHandler">
+        <!-- 注入验证user是否存在的service -->
+        <property name="userBizService" ref="userBizService"/>
     </bean>
 
     <!-- Required for proxy ticket mechanism -->

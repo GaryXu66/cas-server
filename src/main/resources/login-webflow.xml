@@ -50,7 +50,9 @@
     
     <!--4. 因为初始化时，尽管把service保存在了FlowScope作用域中，但request中的参数gateway不存在，登录流程流转到第三个state（serviceAuthorizationCheck） -->
 	<decision-state id="gatewayRequestCheck">
-		<if test="requestParameters.gateway != '' and requestParameters.gateway != null and flowScope.service != null" then="gatewayServicesManagementCheck" else="serviceAuthorizationCheck" />
+		<if test="requestParameters.gateway != '' and requestParameters.gateway != null and flowScope.service != null" 
+			then="gatewayServicesManagementCheck" 
+			else="serviceAuthorizationCheck" />
 	</decision-state>
 	
 	<decision-state id="hasServiceCheck">
@@ -88,7 +90,7 @@
 	generate()要做的就是生成loginTicket，并且把loginTicket放到FlowScope作用域中。登录流程流转到第五个state（viewLoginForm）-->
 	<action-state id="generateLoginTicket">
         <evaluate expression="generateLoginTicketAction.generate(flowRequestContext)" />
-		<transition on="generated" to="viewLoginForm" />
+		<transition on="success" to="viewLoginForm" />
 	</action-state>
     
     <!--7. 至此，经过五个state的流转，我们完成了第一次访问集成了单点登录的应用系统，此时流转到CAS单点登录服务器端的登录页面/WEB-INF/jsp/ui/default/casLoginView.jsp。

@@ -24,7 +24,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"  
     xsi:schemaLocation="http://java.sun.com/xml/ns/javaee  
     http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">  
-  <display-name>Central Authentication System (CAS) 3.5.2</display-name>
+  <display-name>Central Authentication System (CAS) 4.0.0</display-name>
 
   <context-param>
     <param-name>contextConfigLocation</param-name>
@@ -190,7 +190,7 @@
 
   <session-config>
     <!-- Default to 5 minute session timeouts -->
-    <session-timeout>5</session-timeout>
+    <session-timeout>30</session-timeout>
   </session-config>
 
   <error-page>
